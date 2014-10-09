@@ -287,7 +287,6 @@ func (c *DB) LookupPrincipal(user, realm string) (*User, error) {
 
 	filter := ldap.Equal{"SAMAccountName", []byte(user)}
 
-	log.Printf("Avaliable realms: %+v", c.dbs)
 	db := c.dbs[realm]
 	if db == nil {
 		return nil, ErrInvalidRealm
