@@ -174,7 +174,7 @@ func (c *DB) findRealms(alias, realm string) {
 	// connect. This way we can filter out realms which we have no chance
 	// of connecting to.
 	if _, err := c.cred.GetTicket("krbtgt/"+realm, nil); err != nil {
-		log.Printf("Can't get ticket")
+		log.Printf("Can't get ticket: %+v", err)
 		return
 	}
 
@@ -186,7 +186,7 @@ func (c *DB) findRealms(alias, realm string) {
 	c.realmAlias[strings.ToUpper(alias)] = realm
 
 	if err := db.SearchTree(&trusts, base, filter); err != nil {
-		log.Printf("Returning error in searchtree")
+		log.Printf("Returning error in searchtree: %+v", err)
 		return
 	}
 
