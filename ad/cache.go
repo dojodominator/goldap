@@ -155,6 +155,10 @@ func New(cred *kerb.Credential, baseAlias string) *DB {
 	return c
 }
 
+func (c DB) GetTrustedRealms() map[string]*cacheDB {
+	return c.dbs
+}
+
 type trustedDomain struct {
 	FlatName           string
 	TrustPartner       string
