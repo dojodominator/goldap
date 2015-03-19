@@ -110,7 +110,7 @@ type DB struct {
 	cfg        ldap.ClientConfig
 
 	// the cache maps are locked
-	lk      sync.Mutex
+	lk      sync.RWMutex
 	dnusers map[ldap.ObjectDN]interface{}
 	prusers map[principal]*User
 }
@@ -281,9 +281,9 @@ func (c *DB) ResolvePrincipal(user string) (string, string, error) {
 func (c *DB) LookupPrincipal(user, realm string) (*User, error) {
 	pr := principal{user, realm}
 
-	c.lk.Lock()
+	c.lk.RLock()
 	u := c.prusers[pr]
-	c.lk.Unlock()
+	c.lk.RUnlock()
 
 	if u != nil {
 		return u, nil
@@ -326,18 +326,24 @@ func dnToRealm(dn ldap.ObjectDN) string {
 // FlushCache flushes the user/group cache and should be called every so
 // often. This is thread-safe wrt the Lookup functions.
 func (c *DB) FlushCache() {
+	c.lk.RLock()
+	dlen := len(c.dnusers)
+	plen := len(c.prusers)
+	c.lk.RUnlock()
+	dn := make(map[ldap.ObjectDN]interface{}, dlen)
+	pr := make(map[principal]*User, plen)
 	c.lk.Lock()
-	c.dnusers = make(map[ldap.ObjectDN]interface{})
-	c.prusers = make(map[principal]*User)
+	c.dnusers = dn
+	c.prusers = pr
 	c.lk.Unlock()
 }
 
 // LookupDN will lookup a DN returning either a *User or a *Group. Lookups are
 // cached and should be flushed every so often by calling FlushCache.
 func (c *DB) LookupDN(dn ldap.ObjectDN) (val interface{}, err error) {
-	c.lk.Lock()
+	c.lk.RLock()
 	u := c.dnusers[dn]
-	c.lk.Unlock()
+	c.lk.RUnlock()
 
 	if u != nil {
 		return u, nil
