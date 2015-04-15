@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/binary"
-	"github.com/jmckaskill/asn1"
 	"io"
 	"net"
 	"net/url"
 	"strconv"
 	"sync"
+
+	"github.com/jmckaskill/asn1"
 )
 
 type AuthInfo struct {
@@ -80,12 +81,15 @@ func dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
+	dialer := &net.Dialer{
+		DualStack: true,
+	}
 	// SRV
 
 	_, addrs, _ := net.LookupSRV("ldap", network, host)
 
 	for _, a := range addrs {
-		sock, err := net.Dial("tcp", net.JoinHostPort(a.Target, strconv.Itoa(int(a.Port))))
+		sock, err := dialer.Dial("tcp", net.JoinHostPort(a.Target, strconv.Itoa(int(a.Port))))
 		if err == nil {
 			return sock, nil
 		}
@@ -93,7 +97,7 @@ func dial(network, addr string) (net.Conn, error) {
 
 	// Non-SRV
 
-	return net.Dial(network, addr)
+	return dialer.Dial(network, addr)
 }
 
 func open(urlstr string, cfg *ClientConfig) (rw io.ReadWriter, sock net.Conn, err error) {

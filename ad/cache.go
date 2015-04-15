@@ -54,13 +54,17 @@ func (c *ldapMech) dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
+	dialer := &net.Dialer{
+		DualStack: true,
+	}
+
 	// SRV
 
 	_, addrs, _ := net.LookupSRV("ldap", network, host)
 
 	for _, a := range addrs {
 		c.addr = a.Target
-		sock, err := net.Dial("tcp", net.JoinHostPort(a.Target, strconv.Itoa(int(a.Port))))
+		sock, err := dialer.Dial("tcp", net.JoinHostPort(a.Target, strconv.Itoa(int(a.Port))))
 		if err == nil {
 			return sock, nil
 		}
@@ -69,7 +73,7 @@ func (c *ldapMech) dial(network, addr string) (net.Conn, error) {
 	// Non-SRV
 
 	c.addr = host
-	return net.Dial(network, addr)
+	return dialer.Dial(network, addr)
 }
 
 func (c *ldapMech) Connect(rw io.ReadWriter) (io.ReadWriter, error) {
